@@ -136,6 +136,7 @@ export default function AdminDashboard() {
           <label className="block text-sm font-semibold mb-1">Filter by Date:</label>
           <input
             type="date"
+            title="Date"
             className="border border-gray-300 px-3 py-2 rounded-md shadow-sm"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
@@ -144,6 +145,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
+            title="check"
             checked={filterLateOnly}
             onChange={(e) => setFilterLateOnly(e.target.checked)}
             className="accent-red-500"

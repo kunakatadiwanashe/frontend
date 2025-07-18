@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import * as faceapi from "face-api.js";
+import * as faceapi from '@vladmandic/face-api';
 import Webcam from "react-webcam";
 import axios from "axios";
 
