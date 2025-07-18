@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import * as faceapi from '@vladmandic/face-api';
 import Webcam from "react-webcam";
 import axios from "axios";
 
@@ -11,25 +10,31 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [faceapi, setFaceapi] = useState<any>(null);
+  const [loadingModels, setLoadingModels] = useState(true);
 
   useEffect(() => {
     const loadModels = async () => {
-      const MODEL_URL = "/models";
       try {
-        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        const faceapiModule = await import("@vladmandic/face-api");
+        setFaceapi(faceapiModule);
+        const MODEL_URL = "/models";
+        await faceapiModule.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        await faceapiModule.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapiModule.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
         setModelsLoaded(true);
       } catch (error) {
         console.error("Error loading face-api models:", error);
         alert("Failed to load face detection models.");
+      } finally {
+        setLoadingModels(false);
       }
     };
     loadModels();
   }, []);
 
   const captureAndRegister = async () => {
-    if (!modelsLoaded) {
+    if (!modelsLoaded || !faceapi) {
       alert("Face detection models are not loaded yet. Please wait.");
       return;
     }
@@ -67,8 +72,7 @@ export default function Register() {
   };
 
   return (
-
-        <>
+    <>
       <form
         className="space-y-6 w-full md:w-1/2 lg:w-1/2 mx-auto mt-10 p-6 bg-white rounded-lg shadow-md"
         onSubmit={(e) => {
@@ -92,7 +96,6 @@ export default function Register() {
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-
           />
         </div>
 
@@ -112,7 +115,6 @@ export default function Register() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-
           />
         </div>
 
@@ -128,8 +130,8 @@ export default function Register() {
             type="text"
             id="student_id"
             name="student_id"
-            pattern="[A-Za-z]{3}"
-            title="Student ID should be 3 letters"
+            pattern="[A-Za-z0-9]{3,10}"
+            title="Student ID should be 3 to 10 alphanumeric characters"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
             required
@@ -153,6 +155,7 @@ export default function Register() {
               id="capture-button"
               type="button"
               onClick={captureAndRegister}
+              disabled={!isFormValid() || loadingModels}
             >
               <i className="fas fa-camera"></i> Capture
             </button>
@@ -161,12 +164,12 @@ export default function Register() {
 
         <button
           className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        onClick={captureAndRegister} disabled={!isFormValid()}
+          type="submit"
+          disabled={!isFormValid() || loadingModels}
         >
-       Register 
+          Register
         </button>
       </form>
     </>
-
   );
 }

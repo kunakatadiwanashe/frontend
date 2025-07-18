@@ -54,55 +54,124 @@ export default function AdminDashboard() {
     return date.getHours() > 8 || (date.getHours() === 8 && date.getMinutes() > 15);
   };
 
-  useEffect(() => {
-    if (!session) return;
+  // useEffect(() => {
+  //   if (!session) return;
 
-    const fetchLogs = async () => {
-      try {
-        const res = await axios.get<Log[]>("http://localhost:5000/api/attendance/logs");
-        const logs = res.data;
+  //   const fetchLogs = async () => {
+  //     try {
+  //       const res = await axios.get<Log[]>("http://localhost:5000/api/attendance/logs");
+  //       const logs = res.data;
 
-        const logsGrouped: LogsByDate = {};
-        const chartGrouped: Record<string, ChartDataEntry> = {};
-        const allStudentIdsSet = new Set<string>();
-        const attendanceCount: Record<string, number> = {};
+  //       const logsGrouped: LogsByDate = {};
+  //       const chartGrouped: Record<string, ChartDataEntry> = {};
+  //       const allStudentIdsSet = new Set<string>();
+  //       const attendanceCount: Record<string, number> = {};
 
-        logs.forEach((log) => {
-          const logDateObj = new Date(log.timestamp);
-          const dateKey = logDateObj.toISOString().split("T")[0];
-          const timeString = logDateObj.toTimeString().slice(0, 5);
+  //       logs.forEach((log) => {
+  //         const logDateObj = new Date(log.timestamp);
+  //         const dateKey = logDateObj.toISOString().split("T")[0];
+  //         const timeString = logDateObj.toTimeString().slice(0, 5);
 
-          if (!logsGrouped[dateKey]) logsGrouped[dateKey] = [];
-          logsGrouped[dateKey].push({ ...log, time: timeString });
+  //         if (!logsGrouped[dateKey]) logsGrouped[dateKey] = [];
+  //         logsGrouped[dateKey].push({ ...log, time: timeString });
 
-          const late = isLateDate(logDateObj);
-          const weekday = logDateObj.toLocaleDateString("en-US", { weekday: "short" });
+  //         const late = isLateDate(logDateObj);
+  //         const weekday = logDateObj.toLocaleDateString("en-US", { weekday: "short" });
 
-          allStudentIdsSet.add(log.user.studentId);
+  //         allStudentIdsSet.add(log.user.studentId);
 
-          if (!chartGrouped[weekday]) chartGrouped[weekday] = { date: weekday, total: 0, late: 0, absent: 0 };
-          chartGrouped[weekday].total++;
-          if (late) chartGrouped[weekday].late++;
+  //         if (!chartGrouped[weekday]) chartGrouped[weekday] = { date: weekday, total: 0, late: 0, absent: 0 };
+  //         chartGrouped[weekday].total++;
+  //         if (late) chartGrouped[weekday].late++;
 
-          attendanceCount[log.user.studentId] = (attendanceCount[log.user.studentId] || 0) + 1;
-        });
+  //         attendanceCount[log.user.studentId] = (attendanceCount[log.user.studentId] || 0) + 1;
+  //       });
 
-        // Calculate absentees for chart
-        Object.keys(chartGrouped).forEach((weekday) => {
-          const totalUnique = allStudentIdsSet.size;
-          chartGrouped[weekday].absent = totalUnique - chartGrouped[weekday].total;
-        });
+  //       // Calculate absentees for chart
+  //       Object.keys(chartGrouped).forEach((weekday) => {
+  //         const totalUnique = allStudentIdsSet.size;
+  //         chartGrouped[weekday].absent = totalUnique - chartGrouped[weekday].total;
+  //       });
 
-        setLogsByDate(logsGrouped);
-        setChartData(Object.values(chartGrouped));
-        setAttendanceStats(attendanceCount);
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-      }
-    };
+  //       setLogsByDate(logsGrouped);
+  //       setChartData(Object.values(chartGrouped));
+  //       setAttendanceStats(attendanceCount);
+  //     } catch (error) {
+  //       console.error("Error fetching logs:", error);
+  //     }
+  //   };
 
-    fetchLogs();
-  }, [session]);
+  //   fetchLogs();
+  // }, [session]);
+
+
+
+useEffect(() => {
+  if (!session) return;
+
+  const fetchLogs = async () => {
+    try {
+      const res = await axios.get<Log[]>("http://localhost:5000/api/attendance/logs");
+      const logs = res.data;
+
+      const logsGrouped: LogsByDate = {};
+      const chartGrouped: Record<string, ChartDataEntry> = {};
+      const allStudentIdsSet = new Set<string>();
+      const attendanceCount: Record<string, number> = {};
+
+      logs.forEach((log) => {
+        const logDateObj = new Date(log.timestamp);
+        const dateKey = logDateObj.toISOString().split("T")[0];
+        const timeString = logDateObj.toTimeString().slice(0, 5);
+
+        if (!logsGrouped[dateKey]) logsGrouped[dateKey] = [];
+        logsGrouped[dateKey].push({ ...log, time: timeString });
+
+        const late = isLateDate(logDateObj);
+        allStudentIdsSet.add(log.user.studentId);
+
+        const weekday = logDateObj.getDay();
+        const weekdayKey = weekday.toString();
+
+        if (!chartGrouped[weekdayKey]) {
+          chartGrouped[weekdayKey] = { date: weekdayKey, total: 0, late: 0, absent: 0 };
+        }
+        chartGrouped[weekdayKey].total++;
+        if (late) chartGrouped[weekdayKey].late++;
+
+        attendanceCount[log.user.studentId] = (attendanceCount[log.user.studentId] || 0) + 1;
+      });
+
+      const totalUnique = allStudentIdsSet.size;
+      Object.keys(chartGrouped).forEach((weekdayKey) => {
+        chartGrouped[weekdayKey].absent = totalUnique - chartGrouped[weekdayKey].total;
+      });
+
+     
+      const formattedChartData = Object.values(chartGrouped).map((entry) => ({
+        ...entry,
+        date: new Date(2023, 0, parseInt(entry.date) + 1).toLocaleDateString("en-US", {
+          weekday: "short",
+        }),
+      }));
+
+      setLogsByDate(logsGrouped);
+      setChartData(formattedChartData);
+      setAttendanceStats(attendanceCount);
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+    }
+  };
+
+  fetchLogs();
+}, [session]);
+
+
+
+
+
+
+
 
   if (status === "loading") return <div className="p-4 text-lg">Loading...</div>;
   if (!session) return <div className="p-4 text-lg">Redirecting...</div>;
